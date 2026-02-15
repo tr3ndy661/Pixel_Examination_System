@@ -4,11 +4,6 @@
   "installCommand": "npm install",
   "framework": "nextjs",
   "outputDirectory": ".next",
-  "env": {
-    "DATABASE_URI": "@database_uri",
-    "PAYLOAD_SECRET": "@payload_secret",
-    "NODE_ENV": "production"
-  },
   "regions": ["iad1"],
   "functions": {
     "app/**": {
