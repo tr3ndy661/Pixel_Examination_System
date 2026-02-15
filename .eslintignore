@@ -1,0 +1,23 @@
+# Build output
+.next/
+out/
+dist/
+build/
+
+# Node modules
+node_modules/
+
+# Environment variables
+.env
+.env.*
+
+# Cache
+.cache/
+
+# Misc
+*.log
+*.lock
+*.tsbuildinfo
+
+# Generated files
+public/ 
