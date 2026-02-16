@@ -3,6 +3,9 @@ import Navigation from './components/Navigation'
 import SidebarLayout from './components/SidebarLayout'
 import { Inter } from 'next/font/google'
 import { cookies } from 'next/headers'
+import { getPayloadHMR } from '@payloadcms/next/utilities'
+import configPromise from '@payload-config'
+import jwt from 'jsonwebtoken'
 import '../../app/globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -19,18 +22,34 @@ async function getUser() {
     
     if (!token) return null
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/users/me`, {
-      headers: {
-        Cookie: `payload-token=${token.value}`,
-      },
-      cache: 'no-store',
-    })
+    const payload = await getPayloadHMR({ config: configPromise })
+    
+    let decoded
+    try {
+      decoded = jwt.verify(token.value, process.env.PAYLOAD_SECRET || '')
+    } catch (error) {
+      return null
+    }
 
-    if (!response.ok) return null
+    if (decoded && typeof decoded === 'object' && 'id' in decoded) {
+      const { docs: users } = await payload.find({
+        collection: 'users',
+        where: {
+          id: {
+            equals: decoded.id,
+          },
+        },
+        limit: 1,
+      })
 
-    const data = await response.json()
-    return data.success ? data.data : null
+      if (users && users.length > 0) {
+        return users[0]
+      }
+    }
+
+    return null
   } catch (error) {
+    console.error('Error fetching user in layout:', error)
     return null
   }
 }
