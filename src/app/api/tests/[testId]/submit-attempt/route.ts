@@ -153,7 +153,8 @@ export async function POST(
             score: percentageScore,
             gradingDetails: gradingResults,
             totalQuestions: questions.length,
-            correctAnswers: gradingResults.filter(r => r.isCorrect).length
+            correctAnswers: gradingResults.filter(r => r.isCorrect).length,
+            timeTaken: body.timeTaken || 0, // Store timeTaken in seconds
           },
         },
       });

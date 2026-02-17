@@ -5,13 +5,13 @@ import { getPayloadClient } from '../../../../payload'
 import ResultsClient from './ResultsClient'
 
 type AttemptResultParams = {
-  params: {
+  params: Promise<{
     attemptId: string
-  }
+  }>
 }
 
 export default async function AttemptResult({ params }: AttemptResultParams) {
-  const attemptId = params.attemptId
+  const { attemptId } = await params
 
   try {
     const user = await requireStudent()
@@ -27,37 +27,50 @@ export default async function AttemptResult({ params }: AttemptResultParams) {
         id: attemptId,
         depth: 2,
       })
-      attemptTimestamp = attempt.submittedAt
+      attemptTimestamp = (attempt as any).submittedAt
     } catch (error) {
       const logs = await payload.find({
         collection: 'logs',
         where: {
           and: [
-            { 'value.attemptId': { equals: attemptId } },
-            { action: { equals: 'submit-mock-attempt' } }
+            {
+              user: {
+                equals: user!.id
+              }
+            },
+            {
+              action: {
+                equals: 'submit-mock-attempt'
+              }
+            }
           ]
         },
+        sort: '-timestamp',
+        limit: 50, // Fetch recent 50 mock attempts
       })
 
-      if (logs.docs.length > 0) {
-        attempt = logs.docs[0].value
-        attemptTimestamp = logs.docs[0].timestamp
+
+      const foundLog = logs.docs.find((log: any) => log.value?.attemptId === attemptId)
+
+      if (foundLog) {
+        attempt = foundLog.value
+        attemptTimestamp = foundLog.timestamp
         isMockAttempt = true
       } else {
-        throw new Error('Test attempt not found')
+        throw new Error('Test attempt not found in logs')
       }
     }
 
     if (!attempt) throw new Error('Test attempt not found')
 
-    const gradingDetails = attempt.gradingDetails || []
+    const gradingDetails = (attempt as any).gradingDetails || []
     const questions = []
 
     for (const detail of gradingDetails) {
       try {
         const question = await payload.findByID({
           collection: 'questions',
-          id: detail.questionId,
+          id: (detail as any).questionId,
         })
         questions.push(question)
       } catch (err) {
@@ -65,16 +78,16 @@ export default async function AttemptResult({ params }: AttemptResultParams) {
       }
     }
 
-    const testName = attempt.testName || 'Unknown Test'
-    const score = attempt.score !== undefined ? attempt.score : 0
+    const testName = (attempt as any).testName || 'Unknown Test'
+    const score = (attempt as any).score !== undefined ? (attempt as any).score : 0
     const totalQuestions = gradingDetails.length
-    const correctCount = gradingDetails.filter(d => d.isCorrect).length
+    const correctCount = gradingDetails.filter((d: any) => d.isCorrect).length
     const incorrectCount = totalQuestions - correctCount
 
     const attemptData = {
       id: attemptId,
-      testName,
-      score,
+      testName: (attempt as any).testName || 'Unknown Test',
+      score: (attempt as any).score !== undefined ? (attempt as any).score : 0,
       submittedAt: attemptTimestamp,
       totalQuestions,
       correctCount,
@@ -84,7 +97,7 @@ export default async function AttemptResult({ params }: AttemptResultParams) {
       isMockAttempt,
     }
 
-    return <ResultsClient attempt={attemptData} user={user} />
+    return <ResultsClient attempt={attemptData} user={user!} />
   } catch (error) {
     console.error('Error in AttemptResult page:', error)
     return (

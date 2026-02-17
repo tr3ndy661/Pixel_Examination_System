@@ -43,6 +43,8 @@ export default function MockAttemptClient({
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
+  // Track start time for study hours calculation
+  const [startTime] = useState(Date.now())
 
   const currentQuestion = questions[currentQuestionIndex]
 
@@ -86,6 +88,8 @@ export default function MockAttemptClient({
       setError('')
       setSuccessMessage('Submitting your test...')
 
+      const timeTaken = Math.floor((Date.now() - startTime) / 1000) // in seconds
+
       const response = await fetch(`/api/tests/${testId}/submit-attempt`, {
         method: 'POST',
         headers: {
@@ -94,6 +98,7 @@ export default function MockAttemptClient({
         body: JSON.stringify({
           attemptId,
           answers: responses,
+          timeTaken,
         }),
       })
 
@@ -156,7 +161,7 @@ export default function MockAttemptClient({
               <TestTimer timeLimit={timeLimit} testId={testId} attemptId={attemptId} />
             </div>
           </div>
-          
+
           <div className="hidden md:flex flex-1 flex-col items-center px-12 max-w-2xl">
             <div className="flex w-full items-center justify-between mb-1">
               <span className="text-xs font-semibold text-blue-600">Progress: {progressPercent}%</span>
@@ -166,7 +171,7 @@ export default function MockAttemptClient({
               <div className="h-full bg-blue-600 rounded-full transition-all" style={{ width: `${progressPercent}%` }}></div>
             </div>
           </div>
-          
+
           <div className="hidden md:flex items-center gap-4">
             <div className="flex items-center gap-2 rounded-lg bg-slate-800 px-4 py-2 font-mono text-sm font-bold text-slate-300">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -175,7 +180,7 @@ export default function MockAttemptClient({
               <TestTimer timeLimit={timeLimit} testId={testId} attemptId={attemptId} />
             </div>
           </div>
-          
+
           {/* Mobile Progress Bar */}
           <div className="md:hidden w-full">
             <div className="flex w-full items-center justify-between mb-1">
@@ -199,20 +204,19 @@ export default function MockAttemptClient({
                 const isAnswered = responses[questions[index].id]
                 const isCurrent = index === currentQuestionIndex
                 const isFlagged = flaggedQuestions.has(index)
-                
+
                 return (
                   <button
                     key={index}
                     onClick={() => setCurrentQuestionIndex(index)}
-                    className={`relative flex aspect-square items-center justify-center rounded-lg text-sm font-bold transition-all ${
-                      isCurrent
-                        ? 'bg-blue-600 text-white shadow-md ring-2 ring-blue-600 ring-offset-2 ring-offset-slate-900'
-                        : isAnswered
+                    className={`relative flex aspect-square items-center justify-center rounded-lg text-sm font-bold transition-all ${isCurrent
+                      ? 'bg-blue-600 text-white shadow-md ring-2 ring-blue-600 ring-offset-2 ring-offset-slate-900'
+                      : isAnswered
                         ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
                         : isFlagged
-                        ? 'bg-orange-50 text-orange-600 border border-orange-200'
-                        : 'bg-slate-800/50 text-slate-500 border border-white/5'
-                    }`}
+                          ? 'bg-orange-50 text-orange-600 border border-orange-200'
+                          : 'bg-slate-800/50 text-slate-500 border border-white/5'
+                      }`}
                   >
                     {index + 1}
                     {isFlagged && !isCurrent && (
@@ -295,11 +299,10 @@ export default function MockAttemptClient({
               </div>
               <button
                 onClick={() => toggleFlag(currentQuestionIndex)}
-                className={`flex items-center gap-2 transition-colors ${
-                  flaggedQuestions.has(currentQuestionIndex)
-                    ? 'text-orange-500'
-                    : 'text-slate-400 hover:text-orange-500'
-                }`}
+                className={`flex items-center gap-2 transition-colors ${flaggedQuestions.has(currentQuestionIndex)
+                  ? 'text-orange-500'
+                  : 'text-slate-400 hover:text-orange-500'
+                  }`}
               >
                 <svg className="w-5 h-5" fill={flaggedQuestions.has(currentQuestionIndex) ? 'currentColor' : 'none'} viewBox="0 0 20 20" stroke="currentColor">
                   <path d="M3 6a3 3 0 013-3h10a1 1 0 01.8 1.6L14.25 8l2.55 3.4A1 1 0 0116 13H6a1 1 0 00-1 1v3a1 1 0 11-2 0V6z" />
@@ -330,22 +333,20 @@ export default function MockAttemptClient({
                   {currentQuestion.options.map((option, idx) => {
                     const isSelected = responses[currentQuestion.id] === option.id
                     const letter = String.fromCharCode(65 + idx)
-                    
+
                     return (
                       <label
                         key={option.id}
-                        className={`group flex cursor-pointer items-center justify-between rounded-xl border p-4 transition-all ${
-                          isSelected
-                            ? 'border-blue-600 bg-blue-600/5'
-                            : 'border-white/10 hover:border-blue-600/50 hover:bg-blue-600/5'
-                        }`}
+                        className={`group flex cursor-pointer items-center justify-between rounded-xl border p-4 transition-all ${isSelected
+                          ? 'border-blue-600 bg-blue-600/5'
+                          : 'border-white/10 hover:border-blue-600/50 hover:bg-blue-600/5'
+                          }`}
                       >
                         <div className="flex items-center gap-4">
-                          <div className={`flex h-10 w-10 items-center justify-center rounded-lg font-bold transition-all ${
-                            isSelected
-                              ? 'bg-blue-600 text-white'
-                              : 'bg-slate-800 text-slate-400 border border-white/10 group-hover:border-blue-600 group-hover:bg-blue-600 group-hover:text-white'
-                          }`}>
+                          <div className={`flex h-10 w-10 items-center justify-center rounded-lg font-bold transition-all ${isSelected
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-slate-800 text-slate-400 border border-white/10 group-hover:border-blue-600 group-hover:bg-blue-600 group-hover:text-white'
+                            }`}>
                             {letter}
                           </div>
                           <span className="font-medium text-slate-200">{option.optionText}</span>
@@ -388,7 +389,7 @@ export default function MockAttemptClient({
                   </svg>
                   Previous
                 </button>
-                
+
                 <button
                   onClick={handleNext}
                   disabled={currentQuestionIndex === questions.length - 1}
@@ -400,7 +401,7 @@ export default function MockAttemptClient({
                   </svg>
                 </button>
               </div>
-              
+
               <div className="flex items-center justify-center gap-2 text-xs font-medium text-slate-400 italic">
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />

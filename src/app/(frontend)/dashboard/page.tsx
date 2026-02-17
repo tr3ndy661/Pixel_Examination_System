@@ -11,9 +11,7 @@ export default async function Dashboard() {
     const { docs: tests } = await payload.find({
       collection: 'tests',
       where: {
-        'assignments.student': {
-          equals: user.id,
-        },
+
       },
       depth: 2,
     })
@@ -27,7 +25,7 @@ export default async function Dashboard() {
       },
       depth: 2,
       sort: '-submittedAt',
-      limit: 4,
+      limit: 1000,
     })
 
     const { docs: mockLogs } = await payload.find({
@@ -41,7 +39,7 @@ export default async function Dashboard() {
         },
       },
       sort: '-timestamp',
-      limit: 4,
+      limit: 1000,
     })
 
     const allAttempts = [
@@ -66,33 +64,45 @@ export default async function Dashboard() {
 
     const completedTests = allAttempts.filter(a => a.status === 'completed')
     const totalCompleted = completedTests.length
-    const averageScore = totalCompleted > 0 
+    const averageScore = totalCompleted > 0
       ? Math.round(completedTests.reduce((sum, a) => sum + a.score, 0) / totalCompleted)
       : 0
-    
-    const totalMinutes = testAttempts.reduce((sum, attempt) => {
-      const test = typeof attempt.test === 'object' ? attempt.test : null
-      return sum + (test?.timeLimit || 0)
-    }, 0)
+
+    const totalMinutes = [
+      ...testAttempts.map((attempt) => {
+        // Calculate duration for real tests
+        if (!attempt.startTime || !attempt.endTime) return 0
+        const start = new Date(attempt.startTime).getTime()
+        const end = new Date(attempt.endTime).getTime()
+        return (end - start) / 1000 / 60 // minutes
+      }),
+      ...mockLogs.map((log) => {
+        // Calculate duration for mock tests
+        const value = log.value as any || {}
+        const timeTakenSeconds = value.timeTaken || 0
+        return timeTakenSeconds / 60 // minutes
+      })
+    ].reduce((sum, mins) => sum + mins, 0)
+
     const studyHours = (totalMinutes / 60).toFixed(1)
 
     const now = new Date()
     const pendingTests = tests.filter((test) => {
       const userAssignment = Array.isArray(test.assignments)
         ? test.assignments.find(
-            (a) =>
-              (typeof a.student === 'string' && a.student === user.id) ||
-              (a.student && typeof a.student === 'object' && a.student.id === user.id),
-          )
+          (a) =>
+            (typeof a.student === 'string' && a.student === user.id) ||
+            (a.student && typeof a.student === 'object' && a.student.id === user.id),
+        )
         : null
-      
+
       if (!userAssignment || userAssignment.status !== 'pending') return false
-      
+
       if (userAssignment.dueDate) {
         const dueDate = new Date(userAssignment.dueDate)
         if (dueDate < now) return false
       }
-      
+
       return true
     }).slice(0, 2)
 
@@ -179,7 +189,7 @@ export default async function Dashboard() {
                       (typeof a.student === 'string' && a.student === user.id) ||
                       (a.student && typeof a.student === 'object' && a.student.id === user.id),
                   )
-                  
+
                   return (
                     <div key={test.id} className="bg-slate-800/50 p-5 rounded-xl border border-blue-600">
                       <div className="flex justify-between items-start mb-3">
@@ -223,7 +233,7 @@ export default async function Dashboard() {
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-bold text-white">Recent Results</h3>
             </div>
-            
+
             {/* Desktop Table View */}
             <div className="hidden md:block bg-slate-800/50 rounded-xl border border-slate-800 overflow-hidden">
               <table className="w-full text-left">
@@ -240,7 +250,7 @@ export default async function Dashboard() {
                   {allAttempts.length > 0 ? (
                     allAttempts.map((attempt) => {
                       const isPassed = attempt.score >= 70
-                      
+
                       return (
                         <tr key={attempt.id}>
                           <td className="px-6 py-4">
@@ -252,11 +262,10 @@ export default async function Dashboard() {
                           </td>
                           <td className="px-6 py-4 text-sm font-bold text-white">{attempt.score}/100</td>
                           <td className="px-6 py-4">
-                            <span className={`px-2 py-1 text-[10px] font-bold rounded-full ${
-                              isPassed 
-                                ? 'bg-green-100 text-green-700' 
-                                : 'bg-amber-100 text-amber-700'
-                            }`}>
+                            <span className={`px-2 py-1 text-[10px] font-bold rounded-full ${isPassed
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-amber-100 text-amber-700'
+                              }`}>
                               {isPassed ? 'PASSED' : 'RETAKE OK'}
                             </span>
                           </td>
@@ -297,7 +306,7 @@ export default async function Dashboard() {
               {allAttempts.length > 0 ? (
                 allAttempts.map((attempt) => {
                   const isPassed = attempt.score >= 70
-                  
+
                   return (
                     <div key={attempt.id} className="bg-slate-800/50 p-4 rounded-xl border border-slate-800">
                       <div className="flex justify-between items-start mb-3">
@@ -305,11 +314,10 @@ export default async function Dashboard() {
                           <p className="text-sm font-bold text-white">{attempt.testName}</p>
                           <p className="text-xs text-slate-400">Test Attempt</p>
                         </div>
-                        <span className={`px-2 py-1 text-[10px] font-bold rounded-full ${
-                          isPassed 
-                            ? 'bg-green-100 text-green-700' 
-                            : 'bg-amber-100 text-amber-700'
-                        }`}>
+                        <span className={`px-2 py-1 text-[10px] font-bold rounded-full ${isPassed
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-amber-100 text-amber-700'
+                          }`}>
                           {isPassed ? 'PASSED' : 'RETAKE OK'}
                         </span>
                       </div>
