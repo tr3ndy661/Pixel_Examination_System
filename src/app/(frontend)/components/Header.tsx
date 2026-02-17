@@ -5,11 +5,11 @@ import Link from 'next/link'
 import FeedbackButton from './FeedbackButton'
 
 type User = {
-  id: string
+  id: number
   email: string
   fullName?: string
   role: 'admin' | 'student'
-  level?: string
+  level?: number | null
 }
 
 type HeaderProps = {

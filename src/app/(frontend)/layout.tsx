@@ -19,11 +19,11 @@ async function getUser() {
   try {
     const cookieStore = await cookies()
     const token = cookieStore.get('payload-token')
-    
+
     if (!token) return null
 
     const payload = await getPayloadHMR({ config: configPromise })
-    
+
     let decoded
     try {
       decoded = jwt.verify(token.value, process.env.PAYLOAD_SECRET || '')
@@ -57,6 +57,11 @@ async function getUser() {
 export default async function FrontendLayout({ children }: { children: React.ReactNode }) {
   const user = await getUser()
   const showSidebar = user && user.role === 'student'
+
+  console.log('--- LAYOUT DEBUG ---')
+  console.log('User:', user ? { id: user.id, role: user.role, email: user.email } : 'null')
+  console.log('Show Sidebar:', showSidebar)
+  console.log('--------------------')
 
   return (
     <html lang="en" className="h-full dark">

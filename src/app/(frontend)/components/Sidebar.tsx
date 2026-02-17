@@ -5,11 +5,11 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 
 type User = {
-  id: string
+  id: number
   email: string
   fullName?: string
   role: 'admin' | 'student'
-  level?: string
+  level?: number | null
 }
 
 type SidebarProps = {
@@ -82,9 +82,8 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
 
       {/* Sidebar */}
       <aside
-        className={`fixed left-0 top-16 h-[calc(100vh-4rem)] bg-slate-800 border-r border-slate-700 w-64 flex flex-col transition-transform duration-300 z-40 ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        className={`fixed left-0 top-16 h-[calc(100vh-4rem)] bg-slate-800 border-r border-slate-700 w-64 flex flex-col transition-transform duration-300 z-40 ${isOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
       >
         {/* Navigation */}
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
@@ -95,11 +94,10 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
                 key={item.href}
                 href={item.href}
                 onClick={onClose}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                  isActive
-                    ? 'bg-blue-600 text-white'
-                    : 'text-slate-400 hover:bg-slate-700 hover:text-white'
-                }`}
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive
+                  ? 'bg-blue-600 text-white'
+                  : 'text-slate-400 hover:bg-slate-700 hover:text-white'
+                  }`}
               >
                 {item.icon}
                 <span className="font-medium">{item.label}</span>

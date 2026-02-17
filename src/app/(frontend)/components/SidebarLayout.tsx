@@ -5,11 +5,11 @@ import Header from './Header'
 import Sidebar from './Sidebar'
 
 type User = {
-  id: string
+  id: number
   email: string
   fullName?: string
   role: 'admin' | 'student'
-  level?: string
+  level?: number | null
 }
 
 type SidebarLayoutProps = {
